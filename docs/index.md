@@ -246,6 +246,24 @@ cd ./JVM-profiling-in-Kubernetes/services/
 
 ---
 
+# 100 JVM работающих друг с другом и базой
+## __На тестовом стенде__
+
+![bg right h:700px](img/monitoring-5.svg)
+
+<!--
+- Отлдельно заострить внимание на тестовом стенде
+- Подход к мониторингу на продуктиве несколько другой
+
+- особенность работы именно в Kubernetes
+    - как запустить профилирование на 1 поде из 12
+    - как собрать результаты при падении
+    - почему нужно увеличить память и CPU limit
+
+- особенность работы с Alpine
+    - другой способ запуска
+
+
 - На каком этапе мы подключаем профилировщик
 - реплики
 
@@ -281,23 +299,6 @@ cd ./JVM-profiling-in-Kubernetes/services/
 - Как сравнить Zipkin/Jaeger и JVM профайлер
 - Как собрать цифры с этой системы, 0-й уровень, пусть система сама все скажет
 
-
-# 100 JVM работающих друг с другом и базой
-## __На тестовом стенде__
-
-![bg right h:700px](img/monitoring-5.svg)
-
-<!--
-- Отлдельно заострить внимание на тестовом стенде
-- Подход к мониторингу на продуктиве несколько другой
-
-- особенность работы именно в Kubernetes
-    - как запустить профилирование на 1 поде из 12
-    - как собрать результаты при падении
-    - почему нужно увеличить память и CPU limit
-
-- особенность работы с Alpine
-    - другой способ запуска
 -->
 
 
@@ -354,13 +355,11 @@ cd ./JVM-profiling-in-Kubernetes/services/
 
 ---
 
-![bg](img/mountains-pazzle-final.jpg)
+![bg](img/mountains-pazzle-4.jpg)
 
 <!-- _footer: 
 Изображение <a href="https://pixabay.com/ru/users/nicolaticola-2681567/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1736209">Nicola Redfern</a> с сайта <a href="https://pixabay.com/ru/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1736209">Pixabay</a>
 -->
-
-
 
 ---
 
@@ -426,6 +425,19 @@ cd ./JVM-profiling-in-Kubernetes/services/
 ## __Особенности Kubernetes__
 
 ![bg right w:100%](img/profiling-k8s-profiler.svg)
+
+---
+<!-- _class: head-->
+# Профилирование в цикле тестирования
+
+1) Регрессионный тест производительности (JMeter/Gatling)
+1) Статистика по логам, детали по ERROR (Kibana/Grafana, grep)
+1) Бизнесс-метрики производительности (Яндекс.Метрика, ...)
+1) Статистика по запросам (Zipkin, Jaeger)
+1) Мониторинг системных метрик (CPU, Memory, IO)
+1) Прикладной мониторинг (JVM MBean, SQL stat)
+1) **Профилирование JVM**
+1) perf, strace, lsof, ...
 
 ---
 
@@ -1658,6 +1670,7 @@ spec:
 
 ![bg w:90% h:90%](img/profiling-connect-profiler-local-async-profiler.svg)
 
+
 ---
 
 # [Async Profiler](https://github.com/jvm-profiling-tools/async-profiler), поддержка Alpine Linux и не только
@@ -1668,7 +1681,98 @@ spec:
 
 ---
 
-# Выбор количества реплик сервиса и инструмент
+# Kubernetes, Docker-контейнеры, Alpine Linux, JDK DevTools
+
+## __Linux (musl) и Async Profiler__
+
+![bg](img/hub.docker.com-u-fabric8.png)
+
+
+---
+
+<!-- _class: head -->
+
+# Факторы выбора контейнеров
+
+
+![bg](img/hub.docker.com-u-fabric8-images-hl.png)
+
+---
+
+
+![bg](img/hub.docker.com-u-fabric8-images-hl2.png)
+
+---
+<!-- _class: head -->
+
+# Популярные образы с OpenJDK
+
+| Name   | OS  | Ver  | Dev?   | Hit  |
+|---|---|---|---|---|
+| [s2i-java](https://hub.docker.com/r/fabric8/s2i-java)  | CentOS  | 8/11  | JRE   | 10M  |
+| [java-centos-openjdk8-jre](https://hub.docker.com/r/fabric8/java-centos-openjdk8-jre)  | CentOS  | 8  |  JRE  |  100k  |
+| [java-centos-openjdk8-jdk](https://hub.docker.com/r/fabric8/java-centos-openjdk8-jdk) | CentOS | 8  | JDK   |  100k |
+| [java-alpine-openjdk8-jre](https://hub.docker.com/r/fabric8/java-alpine-openjdk8-jre) | Alpine | 8  | JRE   |  100k |
+| [java-alpine-openjdk8-jdk](https://hub.docker.com/r/fabric8/java-alpine-openjdk8-jdk) | Alpine | 8  | JDK   |  100k |
+| [java-alpine-openjdk11-jre](https://hub.docker.com/r/fabric8/java-alpine-openjdk11-jre) | Alpine | 11  | JRE   |  100k |
+
+---
+
+<!-- _class: head -->
+
+# Популярные образы с OpenJDK
+
+|    | Первое место  | Второе место  |
+|---|---|---|
+| Операционная систеа  | CentOS  | Alpine  |
+| Версия Java в OpenJDK  | 8  | 11  |
+| Cредства разработки | JRE (нет dev tools)| JDK (есть dev tools) |
+| Маркировка для профайлеров | linux-x64 | linux-__musl__-x64 |
+
+
+---
+
+![bg](img/musl-vs-glibc.png)
+
+---
+
+<!-- _class: head -->
+
+# Популярные образы с OpenJDK
+
+|      | Второе место  |
+|---|---|
+| Операционная систеа    | Alpine  |
+| Версия Java в OpenJDK    | 11  |
+| Cредства разработки | __JDK (есть dev tools)__ |
+| Маркировка для профайлеров | linux-__musl__-x64 |
+
+* DevTools есть, но их как бы нет, не работают утилиты __jcmd__, ...
+* К счастью в __Async Profiler__ есть утилита __jattach__
+* __jattach__ — аналог jcmd и она работает в Alpine внутри Docker
+
+---
+<!-- _class: head -->
+
+# [Async Profiler](https://github.com/jvm-profiling-tools/async-profiler), поддержка Alpine Linux
+
+## __Нужны права ROOT__
+
+![bg ](img/async-profiler.png)
+
+---
+
+<!-- _class: head -->
+
+# Подключение профайлера к JVM в Kubernetes
+
+## __Особенности профайлеров__
+
+![bg w:100%](img/profiling-connect-profiler.svg)
+
+---
+
+# Выбор количества реплик сервиса и инструмента
 
 ## __Особенности Kubernetes__
 
@@ -1716,6 +1820,7 @@ spec:
 
 # Выберу путь наименьшего сопротивления
 
+## __От задачи к инструменту__
 
 ---
 
@@ -1723,7 +1828,28 @@ spec:
 
 ---
 
-# Как выполнять анализ результатов профилирования
+# Как анализировать результаты профилирования
+
+## __Анализ__
+
+![bg right w:100%](img/profiling-Analyze.svg)
+
+---
+<!-- _class: head -->
+# Как анализировать результаты профилирования
+## __Анализ результатов семплирования__
+
+1) Визуально оценить работу потоков
+2) Собрать статистику по работе потоков
+3) Выбрать проблемные потоки, исключить несущественные
+4) Собрать статистику и отчет только по выбранным потокам
+5) Выбрать проблемные методы, выделить их в статистике
+6) Выделить ожидание внешних сервисов и систем
+7) Наложить статистику по программный код сервиса
+
+---
+
+# Как визуально оценить работу потоков
 
 ## __Анализ__
 
@@ -1731,11 +1857,39 @@ spec:
 
 ---
 
-# Состояния потоков JVM
+![bg w:100%](img/thread-parallel.png)
 
-## __Анализ__
+---
 
-![bg right w:100%](img/profiling-Analyze.svg)
+![bg w:100%](img/thread-parallel-2.png)
+
+---
+<!-- _class: head -->
+# Потоков много и они работают одновременно
+## __Анализ активной работы потоков__
+
+![bg w:100%](img/thread-parallel.png)
+
+---
+
+![bg w:100%](img/thread-non-parallel.png)
+
+
+
+
+---
+<!-- _class: head -->
+# Потоков много, но нет паралельности работы
+
+![bg w:100%](img/thread-non-parallel.png)
+
+---
+<!-- _class: head -->
+# Потоков много, но нет паралельности работы
+## __Блокировки, анализ блокировок__
+
+![bg w:100%](img/thread-non-parallel.png)
+
 
 ---
 
@@ -1744,6 +1898,37 @@ spec:
 ## __Анализ__
 
 ![bg right w:100%](img/profiling-Analyze.svg)
+
+---
+<!-- _class: head -->
+# Что можно исключить из детального анализа
+## __Достаточно статистику посмотреть__
+
+* RMI и JMX - это само профилирование и мониторинг
+  * RMI Scheduler
+  * RMI TCP Accept
+  * RMI TCP Connection
+  * JMX server connection timeout
+* kafka-coordinator-heartbeat-thread
+* Reference Handler
+* Finalizer
+* GC Daemon
+
+---
+<!-- _class: head -->
+# Ключевые потоки
+## __Посмотреть на статистику и заглянуть внутрь__
+
+* http-nio-8080-exec-номер
+  * http-nio-8080-exec-1
+  * http-nio-8080-exec-2
+* Thread-pool-номер
+* Thread-номер
+* OkHttp
+* WebSocket
+* SockJS
+
+
 
 ---
 
@@ -1755,6 +1940,12 @@ spec:
 
 ---
 
+
+![bg w:100%](img/jprofiler-select-thread.png)
+
+
+---
+
 # Статистика выполнения кода в нескольких потоках
 
 ## __Анализ__
@@ -1762,12 +1953,87 @@ spec:
 ![bg right w:100%](img/profiling-Analyze.svg)
 
 ---
+<!-- _class: head -->
+# Задаем настройки и потоки для анализа
 
-# Статистика выполнения кода за интервал времени
+```bash
+#!/bin/bash -x 
 
-## __Анализ__
+reportFolder=$(pwd)
+java="java"
+sjk="$java -jar ../sjk-0.17.jar"
 
-![bg right w:100%](img/profiling-Analyze.svg)
+declare -A threads
+threads=(\
+  ["_all"]='.+' \
+  ["http-nio-8080-exec"]='http-nio-8080-exec.+' \
+  ["pool-3-thread"]='pool-3-thread-.+' \
+  ["OkHttp https"]='OkHttp https.+' \
+  ["Thread-2"]='Thread-2' \
+  ["WebSocket"]='WebSocket.+' \
+)
+```
+
+---
+
+<!-- _class: head -->
+# Выделяем статистику по потокам в файл
+
+## __И строим гистограмму по выделенной статистике__
+```bash
+for thread in "${!threads[@]}"
+do
+  mkdir "${reportFolder}/${thread}"
+
+  $sjk \
+  stcpy \
+  --input "${reportFolder}/sjk.sdt"  \
+  --thread-name "${threads[$thread]}" \
+  --trace-filter "!sun.misc.Unsafe.park" \
+  --output "${reportFolder}/${thread}.sdt"
+  
+  $sjk \
+  ssa \
+  --file "${reportFolder}/${thread}.sdt" \
+  --histo \
+  > "${reportFolder}/${thread}/${thread}.histo.txt"
+done                                                                                 
+```
+
+---
+
+<!-- _class: head -->
+# Выделяем статистику по потокам в файл
+## __Или flame-диаграмму по выделенной статистике__
+```bash
+for thread in "${!threads[@]}"
+do
+  mkdir "${reportFolder}/${thread}"
+
+  $sjk \
+  stcpy \
+  --input "${reportFolder}/sjk.sdt"  \
+  --thread-name "${threads[$thread]}" \
+  --trace-filter "!sun.misc.Unsafe.park" \
+  --output "${reportFolder}/${thread}.sdt"
+
+  $sjk \
+  ssa \
+  --file  "$reportFolder/${thread}.sdt" \
+  --flame \
+  --width 2000 \
+  > "${reportFolder}/${thread}/${thread}.flame.svg"
+done                                                                                 
+```
+---
+
+![bg](img/sjk-flame-1.png)
+
+---
+
+![bg](img/sjk-histo.png)
+
+
 
 ---
 
@@ -1779,6 +2045,91 @@ spec:
 
 ---
 
+![bg](img/flame-2.png)
+
+---
+
+![bg w:120%](img/flame-2.png)
+
+---
+
+![bg w:140%](img/flame-2.png)
+
+---
+
+![bg w:160%](img/flame-2.png)
+
+---
+
+<!-- _class: head -->
+# Запросы разделяются на doPost, doGet, ...
+
+![bg w:160%](img/flame-2.png)
+
+
+---
+
+<!-- _class: head -->
+# Запросы разделяются на doPost, doGet, ...
+
+## __По префиксу: ru.vtb.dbo...__
+
+![bg w:160%](img/flame-2.png)
+
+---
+
+<!-- _class: head -->
+# Запросы разделяются на doPost, doGet, ...
+
+## __По префиксу: ru.vtb.dbo...__
+
+## __По имени: organizationsSearch__
+
+![bg w:160%](img/flame-2.png)
+
+---
+
+<!-- _class: head -->
+# В SJK фильтры методов можно объединять по +
+
+## __org.springframework.web.servlet.FrameworkServlet.doPost+__
+
+## __ru.vtb.dbo.statement.resource.client+__
+
+## __organizationsSearch__
+
+![bg w:160%](img/flame-2.png)
+
+---
+
+
+![bg](img/sjk-method.png)
+
+---
+
+<!-- _class: head -->
+# Выполнять фильтрацию по методам
+```bash
+thread="http-nio-8080-exec"
+for method in "${!methods[@]}"
+do
+    $sjk \
+    stcpy \
+    --input "${reportFolder}/${thread}.sdt"  \
+    --trace-filter "${methods[$method]}" \
+    --output "${reportFolder}/${thread}.${method}.sdt"
+    mkdir "${reportFolder}/${thread}/${method}"
+    
+    $sjk \
+    ssa \
+    --file "${reportFolder}/${thread}.${method}.sdt" \
+    --histo \
+    > "${reportFolder}/${thread}/${method}/${method}.histo.txt"
+done
+```
+
+---
+
 # Ожидание ответа от SQL-сервера
 
 ## __Анализ__
@@ -1787,21 +2138,37 @@ spec:
 
 ---
 
-# Ожидание ответа от другого сервиса по HTTP
+<!-- _class: head -->
+# С дополнительной фильтрацией
+## __От Postgre SQL Server, например__
 
-## __Анализ__
-
-![bg right w:100%](img/profiling-Analyze.svg)
+```bash
+$sjk \
+ssa \
+--file "${reportFolder}/${thread}.${method}.sdt" \
+--trace-filter "org.postgresql.jdbc" \
+--histo \
+> "${reportFolder}/${thread}/${method}/${method}.jdbc.only.histo.txt"
+```
 
 ---
 
-# Накладные расходы микросервисов в Kubernetes
+<!-- _class: head -->
+# С дополнительной фильтрацией
+## __Без Postgre SQL Server, например__
+```bash
+$sjk \
+ssa \
+--file "${reportFolder}/${thread}.${method}.sdt" \
+--trace-filter "!org.postgresql.jdbc" \
+--histo \
+> "${reportFolder}/${thread}/${method}/${method}.wo.jdbc.histo.txt"
+```
+---
+<!-- _class: head -->
+# Автоматизация формирования отчета
 
-## __Анализ__
-
-![bg right vertical w:90% h:90%](img/profiling-kubernetes-traffic.svg)
-
-![bg w:90% h:90%](img/profiling-Analyze.svg)
+![bg](img/sjk-method.png)
 
 ---
 
@@ -1825,11 +2192,20 @@ spec:
 
 ---
 
+![bg](img/report.png)
+
+---
+
 # Пишем инструкцию по профилированию в ручном режиме
 
 ## __Масштабирование__
 
 ![bg right w:100%](img/profiling-info.svg)
+
+---
+
+![bg](img/doc-manual.png)
+
 
 ---
 
@@ -1841,6 +2217,11 @@ spec:
 
 ---
 
+![bg h:90%](img/video.svg)
+
+
+---
+
 # Парное профилирование и анализ результатов
 
 ## __Масштабирование__
@@ -1849,11 +2230,18 @@ spec:
 
 ---
 
+![bg h:90%](img/pair.svg)
+
+
+---
+
 # Пишем скрипты автоматизации профилирования
 
 ## __Масштабирование__
 
 ![bg right w:100%](img/profiling-info.svg)
+
+
 
 ---
 
@@ -1919,6 +2307,11 @@ spec:
 # kubectl, Web UI (Dashboard), Lens, ...
 ![bg  h:75%](img/profiling-kubectl-webui-lens.svg)
 
+
+---
+
+![bg](img/doc-script.png)
+
 ---
 
 # Помещаем скрипты в CI/CD окружение: добавляем Web UI
@@ -1940,6 +2333,16 @@ spec:
 ![bg right w:90%](img/profiling-k8s-profiler.svg)
 
 ---
+<!-- _class: head -->
+# Подключение профайлера к JVM в k8s
+
+## __Добавь ресурсов +1 CPU и если JavaAgent, то и +1 GiByte HEAP__
+
+## __При большой нагрузке профилируй локально, семплированием__
+
+## __Для Alpine Linux выбирай musl реализации инструментов__
+
+---
 
 # Как выполнять анализ: от потоков к коду
 
@@ -1947,9 +2350,25 @@ spec:
 
 ![bg right w:90%](img/profiling-Analyze.svg)
 
+
 ---
+<!-- _class: head -->
+# Анализ результатов профилирования
+
+## __Посмотреть на потоки визуально__
+
+## __Собрать статистику по потокам__
+
+## __Детализировать работу потоков__
+
+## __JProfiler и YourKit также перехватывают SQL и HTTP-запросы__
+
+## __С SJK несложно автоматизировать формирование отчета__
+
+## __JDK Flight Recorder собирает огромное количество метрик__
 
 
+---
 
 # Обмен знаниями, передача опыта, автоматизация
 
@@ -1958,622 +2377,18 @@ spec:
 ![bg right w:90%](img/profiling-info.svg)
 
 ---
+<!-- _class: head -->
+# Обмен знаниями, передача опыта, скрипты
+
+## __Документировать результат__
+
+## __Доброжелательность и терпение__
+
+## __Стремиться к автоматизации и регрессионному профилированию__
+
+---
 
 # Профилирование JVM в Kubernetes : три больших шага
 ## __Вопросы и ответы__
 
-![bg](img/mountains-pazzle-3.jpg)
-
----
----
----
----
----
----
----
----
-
-
-
-<!-- _class: head-->
-
-# Количество объектов в HEAP
-
-
-
----
-
-<!-- _class: head-->
-
-# Количество и размер новых объектов
-
----
-
-<!-- _class: head-->
-
-# Тексты исключений
-
----
-
-<!-- _class: head-->
-
-# Параметры JDBC SQL, лог SQL-запросов
-
----
-
-<!-- _class: head-->
-
-# Параметры HTTP-запросов, лог HTTP запросов
-
----
-
-<!-- _class: head-->
-
-# Нужен семплирующий профайлерs
-
----
-
-<!-- _class: head-->
-
-# В логах ошибки без деталей
-
-```java
-try 
-{
-    doWork_1();
-    doWork_2();
-    doWork_3();
-    doWork_4();
-    doWork_5();
-} 
-catch (Exception e) // А что тут было?
-{
-    log.error("Сообщение об ошибке");
-    // log.error("Сообщение об ошибке", e);
-}
-```
-
----
-
-<!-- _class: head-->
-
-# В логе нет ошибок, но работает медленно
-
-```java
-try {
-    try_parse_config();              // долго
-} 
-catch (Exception e) {
-    try {
-        get_config_via_reflection(); // очень долго
-    } 
-    catch (Exception e) {
-        settings = "None";           
-    }
-}
-```
----
-
-
----
-<!-- _class: head -->
-
-Почему это нужно слушателем:
-
-- От разделения на микросервисы задач меньше не становится
-- Как поставить на поток
-- Как запустить профилирование
-- Как анализировать результаты
-- Почему это нужно команде, а не отдельному инженеру
-
----
-<!-- _class: head -->
-
-![bg h:100%](img/kubernetes-big-team.svg)
-
----
-<!-- _class: head -->
-
-
-![bg w:100%](img/java-big-team.svg)
-
-
-
----
-<!-- _class: head -->
-
-# Автоматизируем профилирование JVM в k8s
-
-![bg h:80%](img/profiling-CI-team.svg)
-
-
-
-
----
-
-![bg](img/women-1209678_1920.jpg)
-
-<!-- _footer: Изображение <a href="https://pixabay.com/photos/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1209678">Free-Photos</a> с сайта <a href="https://pixabay.com/ru/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1209678">Pixabay</a> -->
-
----
-
-![bg](img/home-office-569153_1920.jpg)
-
-<!-- _footer: Изображение [LEEROY Agency](https://pixabay.com/ru/users/life-of-pix-364018/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=569153) с сайта [Pixabay](https://pixabay.com/ru/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=569153) -->
-
-
-
----
-<!-- _footer: __1.__ Приветствие -->
-
-## О себе
-
----
-<!-- _footer: __1.__ Приветствие -->
-
-## Об опыте профилирования JVM в Kubernetes
-
----
-
-# __2.__ О JVM, Kubernetes и профилировании
-
----
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## JVM
-
----
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Kubernetes
-
----
-
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Docker
-
-![bg](img/hub.docker.com-u-fabric8.png)
-
----
-
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Fabric8
-
-![bg](img/hub.docker.com-u-fabric8-images.png)
-
----
-
-## Факторы
-## выбора
-
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-
-![bg](img/hub.docker.com-u-fabric8-images-hl.png)
-
----
-
-
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-
-![bg](img/hub.docker.com-u-fabric8-images-hl2.png)
-
----
-
-## OpenJDK 8 или OpenJDK 11
-## Alpine или CentOS
-## JRE или JDK
-
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-
-![bg blur](img/hub.docker.com-u-fabric8-images-hl2.png)
-
-
----
-
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Самые популярные образы с OpenJDK
-
-| Name   | OS  | Ver  | Dev?  | Monitor | Hit  |
-|---|---|---|---|---|---|
-| [s2i-java](https://hub.docker.com/r/fabric8/s2i-java)  | CentOS  | 8/11  | JRE  | Jolokia | 10M  |
-| [java-centos-openjdk8-jre](https://hub.docker.com/r/fabric8/java-centos-openjdk8-jre)  | CentOS  | 8  |  JRE | +Prom |  100k  |
-| [java-centos-openjdk8-jdk](https://hub.docker.com/r/fabric8/java-centos-openjdk8-jdk) | CentOS | 8  | JDK  | +Prom |  100k |
-| [java-alpine-openjdk8-jre](https://hub.docker.com/r/fabric8/java-alpine-openjdk8-jre) | Alpine | 8  | JRE  | +Prom |  100k |
-| [java-alpine-openjdk8-jdk](https://hub.docker.com/r/fabric8/java-alpine-openjdk8-jdk) | Alpine | 8  | JDK  | +Prom |  100k |
-| [java-alpine-openjdk11-jre](https://hub.docker.com/r/fabric8/java-alpine-openjdk11-jre) | Alpine | 11  | JRE  | +Prom |  100k |
-
----
-
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Самое популярное окружение OpenJDK
-
-|    | Первое место  | Второе место  |
-|---|---|---|
-| Операционная систеа  | CentOS  | Alpine  |
-| Версия OpenJDK  | 8  | 11  |
-| Cредства разработки | JRE (нет dev tools)| JDK (есть dev tools) |
-| Агент мониторинга | Jolokia | Agent Bond (Jolokia + Prometheus) |
----
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Профилирование
-
-Профилирование - детальное изучение работы JVM с помощью профайлеров или встроенных механизмов JDK.
-
-Выполнять его сложно, а анализировать результаты долго.
-
-Поэтому оно нужно не всегда. И часто не нужно.
-
----
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Профилирование в цикле тестирования
-
-1) Регрессионный тест производительности (JMeter/Gatling)
-1) Статистика по логам, детали по ERROR (Kibana/Grafana, grep)
-1) Мониторинг системных метрик (CPU, Memory, IO)
-1) Прикладной мониторинг (JVM MBean, SQL stat)
-1) **Профилирование JVM**
-1) perf, strace, lsof, ...
-
----
-<!-- _footer: __2.__ О JVM, Kubernetes и профилировании -->
-
-## Профилирование в цикле тестирования
-
-1. Регрессионный тест производительности (JMeter/Gatling)
-1. Статистика по логам, детали по ERROR (Kibana/Grafana, grep)
-1. Мониторинг системных метрик (CPU, Memory, IO)
-1. Прикладной мониторинг (JVM MBean, SQL stat)
-1. **Профилирование JVM**
-1. perf, strace, lsof, ...
-
-Все это вместе расширенный **USE Method**
-
----
-
-# __3.__ О микросервисах на основе JVM и дефектах. Аналитика дефектов производительности по частоте и простоте обнаружения и исправления, визуальном проявлении и их мониторинге.
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Микросервисы на основе JVM
-
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Дефекты производительности
-
-Если микросервис новый, то надо знать лишь **ручку сервиса**:
-* логи сервиса
-* статистику о длительности работы метода
-* результаты теста Apache.JMeter/Gatling с числами
-
-Разработчику не нужны результаты профилирования. Он и так знает о всех костылях и косяках, что сам заложил в прототип.
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Дефекты производительности
-
-Если микросервис уже не новый, то надо больше данных:
-* *логи сервиса*
-* *статистику о длительности работы метода*
-* *результаты теста Apache.JMeter/Gatling с числами*
-* результаты мониторинга
-* **результаты профилирования**
-* гипотезы, как исправить дефект
-* результаты проверки гипотез, если возможно
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Дефекты производительности
-
-* Медленный или частый SQL или HTTP-запрос
-* Однопоточная обработка коллекции
-* Активное выделение памяти
-* Медленный файловый ввод-вывод
-* Активная генерация исключений
-* Утечка подключений или файлов
-* Блокировки
-* Неоптимальный алгоритм
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Медленный SQL-запрос
-
-* в логах ошибки о долгих SQL-запросах
-* в логах ошибки о нехватке подключений
-* пул подключений используется высоко
-* CPU Usage и Load Average на сервере БД высокий
-* CPU Usage и Load Average на сервере приложений мал
-* Total Time и Mean Time по запросу высокий 
-* __в результатах профилирования__ ожидание получения ответа
-* в трассировке видны типичные параметры запроса
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Медленный ответ на SQL-запрос
-
-Может проявляться только:
-* при больших объемах БД
-* высокой интенсивности запросов
-* при определенных значениях параметров запроса
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Частый SQL-запрос
-
-* в логах ошибки о нехватке подключений к БД
-* CPU Usage и Load Average на сервере БД низкий
-* CPU Usage и Load Average на сервере приложений высокий
-* Count по запросу высокий относительно основных запросов
-* размер таблиц по запросу очень мал (до 1000 записей)
-* в результатах профилирования __ожидание получения ответа__
-* и __дисбаланс количества выполнений методов и SQL__
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Медленный ответ на HTTP-запрос
-
-* в логах ошибки об HTTP Response TimeOut
-* CPU Usage и Load Average на сервере приложений невысокий
-* высокая длительность по запросу в Zipkin, Jaeger
-* в результатах профилирования ожидание ответов на HTTP-запросы к другому сервису
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Частый HTTP-запрос
-
-* в логах ошибки об HTTP Connection TimeOut
-* CPU Usage и Load Average на сервере приложений высокие
-* NetStat TCP Time Wait высокий
-* высокая интенсивность по запросу в Zipkin, Jaeger
-* в результатах профилирования __ожидание подключения__
-* и __дисбаланс количества выполнений методов и HTTP__
-* трассировка показывает повторяющиеся параметры запроса
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Однопоточная обработка коллекций
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Медленный файловый ввод-вывод
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Активное выделение памяти
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Утечка подключений или файлов
-
----
-
-<!-- _footer: __3.__ О микросервисах на основе JVM и их дефектах -->
-
-## Неоптимальный алгоритм
-
----
-
-# __4.__ Об инструментах профилирования JVM, которые использовал в работе. Их возможностях.
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## Инструменты профилирования JVM
-
-* SJK
-* AsyncProfiler
-* Java Flight Recorder и JMC
-* JVisualVM
-* JProfiler
-* YourKit Java Profiler
-* NewRelic Java performance monitoring
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## SJK
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## AsyncProfiler
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## Java Flight Recorder и JMC
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## JVisualVM
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## JProfiler
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## YourKit Java Profiler
-
----
-
-<!-- _footer: __4.__ Об инструментах профилирования JVM -->
-
-## NewRelic Java performance monitoring
-
----
-
-# __5.__ Классификация возможностей (плюсов) и минусов инструментов
-
----
-
-<!-- _footer: __5.__ Классификация возможностей (плюсов) и минусов инструментов -->
-
-## Консольный режим работы
-
----
-
-<!-- _footer: __5.__ Классификация возможностей (плюсов) и минусов инструментов -->
-
-## Профилирование кода сеплированием
-
----
-
-<!-- _footer: __5.__ Классификация возможностей (плюсов) и минусов инструментов -->
-
-## Профилирование кода инструментацией
-
----
-
-<!-- _footer: __5.__ Классификация возможностей (плюсов) и минусов инструментов -->
-
-## Статистика по памяти
-
----
-
-<!-- _footer: __5.__ Классификация возможностей (плюсов) и минусов инструментов -->
-
-## Статистика по памяти
-
----
-
-# __6.__ Дефекты, которые легко найти с инструментами профилирования.
-
----
-
-# __7.__ Дефекты, которые легче найти без инструментов профилирования.
-
----
-
-# __8.__ Особенности профилирования JVM в Kubernetes: что особенного в добавлении профайлера в контейнер, включении профилирования, получении результатов
-
----
-
-<!-- _footer: __8.__ Особенности профилирования JVM в Kubernetes -->
-
-## Рабочее место и CI/CD в 2021-м году
-
----
-
-<!-- _footer: __8.__ Особенности профилирования JVM в Kubernetes -->
-
-## Kubernetes и автоматизация
-
----
-
-<!-- _footer: __8.__ Особенности профилирования JVM в Kubernetes -->
-
-## Задачи по настройке профилирования
-
-* примонтировать каталог с javaagent в поды
-* поменять JAVA_OPTIONS
-    * добавить javaagent
-    * открыть JMX/RMI Port
-    * активировать Java Fligth Recorder
-    * задать параметры профилирования
-* поменять JAVA_OPTIONS на лету с jcmd и другими утилитами
-* пробросить порт до javaagent/JMX/RMI
-
----
-
-<!-- _footer: __8.__ Особенности профилирования JVM в Kubernetes -->
-
-## Задачи по анализу результатов
-
-* скачать и сохранить результаты профилирования
-* анализ потоков
-* фильтрация по потокам и методам
-* анализ стек-трейсов
-* анализ SQL и HTTP-запросов
-* анализ исключений
-
----
-
-# __9.__ Рецепт профилирования с SJK
-
----
-
-# __10.__ Рецепт профилирования с AsyncProfiler
----
-
-# __11.__ Рецепт профилирования с JVisualVM
----
-
-# __12.__ Рецепт профилирования с Java Flight Recorder и JMC
-
----
-
-# __13.__ Рецепт профилирования с JProfiler
-
----
-
-# __14.__ Рецепт профилирования с YourKit Java Profiler
-
----
-
-# __15.__ Рецепт профилирования с NewRelic Java performance monitoring
-
----
-
-# __16.__ Выводы
-
----
-
-# __17.__ Что почитать
-
----
-
-# __18.__ Что попробовать
-
----
-
-# __19.__ Что не было рассказано
-
----
-
-# Вопросы
+![bg](img/mountains-pazzle-4.jpg)
