@@ -8,6 +8,7 @@
  */
 
  @import url("https://fonts.googleapis.com/css?family=Roboto:400,700");
+ @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
  @import url("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/github.min.css");
  
  
@@ -299,6 +300,9 @@ section
     padding: 0;
 }
 
+section code {
+    font-family: 'JetBrains Mono', monospace;
+}
 section > p > code
 {
     word-wrap: anywhere;
