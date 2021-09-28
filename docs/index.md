@@ -1244,15 +1244,15 @@ spec:
       volumes:
         - name: jprofiler
           hostPath:
-            path: /opt/data/jprofiler12.0.2/bin/linux_musl-x64 # на диске    
+            path: /opt/data/jprofiler12.0.2/ # на диске    
       containers:
         - name: test-webserver
           env:
-            - name: JAVA_OPTIONS                               # свободный порт
-              value: -agentpath:/tmp/jprofiler/libjprofilerti.so=port=8849,nowait
+            - name: JAVA_OPTIONS                                             # свободный порт
+              value: -agentpath:/tmp/jp/bin/linux_musl-x64/libjprofilerti.so=port=8849,nowait
           volumeMounts:
             - name: jprofiler
-              mountPath: /tmp/jprofiler                        # в поде 
+              mountPath: /tmp/jp             # в поде 
 
 ```
 
@@ -1269,15 +1269,15 @@ spec:
       volumes:
         - name: jprofiler
           hostPath:
-            path: /opt/data/jprofiler12.0.2/bin/linux-x64 # просто linux-x64   
+            path: /opt/data/jprofiler12.0.2 # просто linux-x64   
       containers:
         - name: test-webserver
           env:
             - name: JAVA_OPTIONS
-              value: -agentpath:/tmp/jprofiler/libjprofilerti.so=port=8849,nowait
+              value: -agentpath:/tmp/jp/bin/linux-x64/libjprofilerti.so=port=8849,nowait
           volumeMounts:
             - name: jprofiler
-              mountPath: /tmp/jprofiler
+              mountPath: /tmp/jp
 
 ```
 
@@ -1294,15 +1294,15 @@ spec:
       volumes:
         - name: jprofiler
           hostPath:
-            path: /opt/data/jprofiler12.0.2/bin/linux-x64 # или linux_musl-x64  
+            path: /opt/data/jprofiler12.0.2/ # или linux_musl-x64  
       containers:
         - name: test-webserver-other
           env:
             - name: JAVA_OPTIONS
-              value: -agentpath:/tmp/jprofiler/libjprofilerti.so=port=8849,nowait
+              value: -agentpath:/tmp/jp/bin/linux-x64/libjprofilerti.so=port=8849,nowait
           volumeMounts:
             - name: jprofiler
-              mountPath: /tmp/jprofiler
+              mountPath: /tmp/jp
 
 ```
 
